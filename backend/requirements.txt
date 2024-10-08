@@ -1,0 +1,11 @@
+pre-commit
+pylint
+black
+fastapi
+uvicorn
+sqlalchemy
+psycopg2
+pydantic
+passlib[bcrypt]
+pytest
+httpx
