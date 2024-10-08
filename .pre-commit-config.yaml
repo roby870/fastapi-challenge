@@ -1,0 +1,19 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        entry: black
+        language: python
+        types: [python]
+        args: [--line-length=88]  
+        additional_dependencies: ['black==24.10.0']
+
+  - repo: https://github.com/pre-commit/mirrors-pylint
+    rev: v3.0.0a5  
+    hooks:
+      - id: pylint
+        entry: pylint
+        language: python
+        types: [python]
+        additional_dependencies: ['pylint==3.0.0a5']
