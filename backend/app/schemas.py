@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from enum import Enum
+from typing import Optional
 
 class UserLevel(str, Enum):
     admin = "admin"
@@ -13,12 +14,24 @@ class UserCreate(BaseModel):
     user_level: UserLevel
     password: str
 
+    class Config:
+        from_attributes = True
+
+
 class UserRead(BaseModel):
     id: int
     name: str
     surname: str
-    email: str
+    email: EmailStr
     user_level: UserLevel
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None

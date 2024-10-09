@@ -4,8 +4,13 @@ black
 fastapi
 uvicorn
 sqlalchemy
+alembic
 psycopg2
 pydantic
+pydantic[email]
 passlib[bcrypt]
+python-jose
+pyjwt
+python-multipart
 pytest
 httpx
