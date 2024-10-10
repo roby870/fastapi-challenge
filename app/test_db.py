@@ -1,10 +1,12 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from .database import Base
 
-TEST_DATABASE_URL = "postgresql://postgres:password@db_test:5432/test_db"
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(TEST_DATABASE_URL)
+
+engine = create_engine(DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
