@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException, Depends, status, Query
+from fastapi import FastAPI, Depends, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from . import models, schemas, service
 from .database import engine
 from .repository import get_db
 from typing import Optional
+from .exceptions import CustomExceptions
 
 
 models.Base.metadata.create_all(bind=engine)
@@ -18,16 +19,18 @@ def startup_event():
     get_db()
 
 @app.post("/create_user", response_model=schemas.UserRead)
-async def create_user(user: schemas.UserCreate, token: str = Depends(oauth2_scheme),  db: Session = Depends(get_db)):
+def create_user(user: schemas.UserCreate, token: str = Depends(oauth2_scheme),  db: Session = Depends(get_db)):
     current_user = service.get_current_user(db, token)
+    if not current_user:
+        raise CustomExceptions.get_credentials_exception()
     if current_user.user_level != "admin":
-        raise HTTPException(status_code=403, detail="Not authorized")
+        raise CustomExceptions.get_not_authorized_exception()
     db_user = service.get_user_by_email(db, email=user.email)
     if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise CustomExceptions.get_bad_request_exception(detail="Email already registered")
     db_user = service.get_user(db, username=user.username)
     if db_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
+        raise CustomExceptions.get_bad_request_exception(detail="Username already registered")
     return service.create_user(db=db, user=user)
 
 
@@ -35,19 +38,15 @@ async def create_user(user: schemas.UserCreate, token: str = Depends(oauth2_sche
 def get_user(user_id: int, db: Session = Depends(get_db)):
     db_user = service.get_user_by_id(db=db, user_id=user_id)
     if not db_user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise CustomExceptions.not_found_exception()
     return db_user
 
 
 @app.post("/token", response_model=schemas.Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = service.authenticate_user(db, form_data.username, form_data.password)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise CustomExceptions.get_credentials_exception()
     access_token = service.create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -64,7 +63,7 @@ def list_users(
 ):
     current_user = service.get_current_user(db, token) 
     if current_user.user_level not in ["admin", "user"]:
-        raise HTTPException(status_code=403, detail="Not authorized")
+        raise CustomExceptions.get_not_authorized_exception()
     query = service.filter_users(db, name, surname, email)
     users = query.offset(skip).limit(limit).all()
     return users
