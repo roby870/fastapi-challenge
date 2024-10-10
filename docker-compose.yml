@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: fastapi_db
+      POSTGRES_DB: fastapi__db
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -33,7 +33,17 @@ services:
       - db
       - db_test 
     environment:
-      DATABASE_URL: postgresql://postgres:password@db:5432/fastapi_db
+      DATABASE_URL: postgresql://postgres:password@db:5432/fastapi__db
+
+  test:
+    build: ./backend
+    depends_on:
+      - db_test
+    environment:
+      DATABASE_URL: postgresql://postgres:password@db_test:5432/test_db
+    command: ["pytest", "--disable-warnings", "-v"]
+    volumes:
+      - ./backend:/app
 
 volumes:
   postgres_data:

@@ -8,6 +8,7 @@ class UserLevel(str, Enum):
     guest = "guest"
 
 class UserCreate(BaseModel):
+    username: str
     name: str
     surname: str
     email: str
@@ -20,6 +21,7 @@ class UserCreate(BaseModel):
 
 class UserRead(BaseModel):
     id: int
+    username: str
     name: str
     surname: str
     email: EmailStr
@@ -27,6 +29,7 @@ class UserRead(BaseModel):
 
     class Config:
         from_attributes = True
+        use_enum_values = True
 
 
 class Token(BaseModel):
@@ -34,4 +37,4 @@ class Token(BaseModel):
     token_type: str
 
 class TokenData(BaseModel):
-    email: Optional[str] = None
+    username: Optional[str] = None
