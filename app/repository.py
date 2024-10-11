@@ -4,21 +4,21 @@ from sqlalchemy.orm import sessionmaker, Session
 from app.models import User
 from . import schemas
 from typing import Optional
-from passlib.context import CryptContext
+import bcrypt
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def get_password_hash(password):
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed_password.decode('utf-8')
+
+def verify_password(plain_password, hashed_password):
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
 
 def create_initial_data(db: Session):
     if db.query(User).count() == 0:

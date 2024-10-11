@@ -6,6 +6,9 @@ from .database import engine
 from .repository import get_db
 from typing import Optional
 from .exceptions import CustomExceptions
+import logging
+import threading
+import time
 
 
 models.Base.metadata.create_all(bind=engine)
@@ -14,11 +17,46 @@ app = FastAPI()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+create_user_counter = 0
+list_users_counter = 0
+background_counter = 0
+
+
+logging.basicConfig(filename="app/app.log",  
+    level=logging.INFO,  
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", 
+    datefmt="%Y-%m-%d %H:%M:%S", 
+    filemode='a')
+logger = logging.getLogger(__name__)
+
+
+def increment_background_counter():
+    global background_counter
+    while True:
+        time.sleep(300)  
+        background_counter += 1
+        logging.info(f"Background counter incremented to {background_counter}")
+
+
 @app.on_event("startup")
 def startup_event():
     get_db()
+    threading.Thread(target=increment_background_counter, daemon=True).start()
 
-@app.post("/create_user", response_model=schemas.UserRead)
+
+def increment_create_user_counter():
+    logger.info("POST /create_user")
+    global create_user_counter
+    create_user_counter += 1
+
+
+def increment_list_users_counter():
+    logger.info("GET /list_users")
+    global list_users_counter
+    list_users_counter += 1
+
+
+@app.post("/create_user", response_model=schemas.UserRead, dependencies=[Depends(increment_create_user_counter)])
 def create_user(user: schemas.UserCreate, token: str = Depends(oauth2_scheme),  db: Session = Depends(get_db)):
     current_user = service.get_current_user(db, token)
     if not current_user:
@@ -34,14 +72,6 @@ def create_user(user: schemas.UserCreate, token: str = Depends(oauth2_scheme),  
     return service.create_user(db=db, user=user)
 
 
-@app.get("/user/{user_id}", response_model=schemas.UserRead)
-def get_user(user_id: int, db: Session = Depends(get_db)):
-    db_user = service.get_user_by_id(db=db, user_id=user_id)
-    if not db_user:
-        raise CustomExceptions.not_found_exception()
-    return db_user
-
-
 @app.post("/token", response_model=schemas.Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = service.authenticate_user(db, form_data.username, form_data.password)
@@ -51,7 +81,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@app.get("/list_users/", response_model=list[schemas.UserRead])
+@app.get("/list_users/", response_model=list[schemas.UserRead], dependencies=[Depends(increment_list_users_counter)])
 def list_users(
     skip: int = Query(0, ge=0),  
     limit: int = Query(10, ge=1),  
@@ -67,3 +97,14 @@ def list_users(
     query = service.filter_users(db, name, surname, email)
     users = query.offset(skip).limit(limit).all()
     return users
+
+#I asume only an admin have permisson
+@app.get("/counters/")
+def get_counters(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    current_user = service.get_current_user(db, token)
+    if current_user.user_level != "admin":
+        raise CustomExceptions.get_not_authorized_exception()
+    return {
+        "create_user_calls": create_user_counter,
+        "list_users_calls": list_users_counter
+    }

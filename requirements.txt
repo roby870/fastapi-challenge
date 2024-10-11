@@ -7,8 +7,8 @@ sqlalchemy
 alembic
 psycopg2
 pydantic
-pydantic[email]
-passlib[bcrypt]
+pydantic[email] 
+bcrypt==4.2.0
 python-jose
 pyjwt
 python-multipart
