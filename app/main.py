@@ -102,6 +102,8 @@ def list_users(
 @app.get("/counters/")
 def get_counters(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     current_user = service.get_current_user(db, token)
+    if not current_user:
+        raise CustomExceptions.get_credentials_exception()
     if current_user.user_level != "admin":
         raise CustomExceptions.get_not_authorized_exception()
     return {

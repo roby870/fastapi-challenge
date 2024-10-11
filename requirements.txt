@@ -13,4 +13,5 @@ python-jose
 pyjwt
 python-multipart
 pytest
+pytest-cov
 httpx
