@@ -28,13 +28,9 @@ The application includes predefined user seeds to facilitate manual testing. The
 
 #### Default Users
 
-Username: John
-Password: securepassword
-User level: admin
+Username: John. Password: G*qE/6r$. User level: admin.
 
-Username: Jane
-Password: securepassword
-User level: user
+Username: Jane. Password: G*qE/6r$. User level: user.
 
 ## Tests
 

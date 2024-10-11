@@ -23,8 +23,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 def create_initial_data(db: Session):
     if db.query(User).count() == 0:
         users = [
-            User(username="John", name="John", surname="Doe", email="john.doe@example.com", user_level="admin", password=get_password_hash("securepassword")),
-            User(username="Jane", name="Jane", surname="Doe", email="jane.doe@example.com", user_level="user", password=get_password_hash("securepassword")),
+            User(username="John", name="John", surname="Doe", email="john.doe@example.com", user_level="admin", password=get_password_hash("G*qE/6r$")),
+            User(username="Jane", name="Jane", surname="Doe", email="jane.doe@example.com", user_level="user", password=get_password_hash("G*qE/6r$")),
         ]
         db.bulk_save_objects(users)  
         db.commit()

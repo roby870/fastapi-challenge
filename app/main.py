@@ -67,7 +67,7 @@ def create_user(user: schemas.UserCreate, token: str = Depends(oauth2_scheme),  
 
     Parameters:
     - user (schemas.UserCreate): The user data required to create a new user, 
-      including username and email.
+      including username, email, name, surname, user level and a valid password.
     - token (str): The OAuth2 token for authentication, used to identify the 
       current user.
     - db (Session): The database session for executing database operations.

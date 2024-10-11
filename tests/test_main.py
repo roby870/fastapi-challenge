@@ -15,7 +15,7 @@ def test_client():
         username="admin",
         name="John",
         surname="Doe",
-        password=get_password_hash("admin_password"),  
+        password=get_password_hash("G*qE/6r$"),  
         user_level="admin"
     )
     db.add(admin_user)
@@ -24,7 +24,7 @@ def test_client():
         username="JackDoe",
         name="Jack",
         surname="Doe",
-        password=get_password_hash("admin2_password"),  
+        password=get_password_hash("G*qE/6r$"),  
         user_level="admin"
     )
     db.add(admin_user_2)
@@ -33,7 +33,7 @@ def test_client():
         username="HarryDoe",
         name="Harry",
         surname="Doe",
-        password=get_password_hash("guest_password"),  
+        password=get_password_hash("G*qE/6r$"),  
         user_level="guest"
     )
     db.add(guest_user_1)
@@ -45,7 +45,7 @@ def test_client():
 def authenticate_admin(test_client):
     login_response = test_client.post(
         "/token",
-        data={"username": "admin", "password": "admin_password"}  
+        data={"username": "admin", "password": "G*qE/6r$"}  
     )
     return login_response.json()["access_token"]
 
@@ -54,7 +54,7 @@ def test_create_user(test_client):
     response = test_client.post(
         "/create_user",
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"email": "testuser@example.com", "password": "password", "username": "testuser", "name": "test", "surname": "user", "user_level": "guest"}
+        json={"email": "testuser@example.com", "password": "G*qE/6r$", "username": "testuser", "name": "test", "surname": "user", "user_level": "guest"}
     )
     assert response.status_code == 200
     data = response.json()
@@ -65,21 +65,21 @@ def test_not_authenticated_create_user(test_client):
     response = test_client.post(
         "/create_user",
         headers={"Authorization": "Bearer 1234"},
-        json={"email": "testuser@example.com", "password": "password", "username": "testuser", "name": "test", "surname": "user", "user_level": "guest"}
+        json={"email": "testuser@example.com", "password": "G*qE/6r$", "username": "testuser", "name": "test", "surname": "user", "user_level": "guest"}
     )
     assert response.status_code == 401
 
 def test_not_authorized_create_user(test_client):
     login_response = test_client.post(
         "/token",
-        data={"username": "HarryDoe", "password": "guest_password"}  
+        data={"username": "HarryDoe", "password": "G*qE/6r$"}  
     )
     access_token =  login_response.json()["access_token"]
     assert login_response.status_code == 200
     response = test_client.post(
         "/create_user",
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"email": "testuser@example.com", "password": "password", "username": "testuser", "name": "test", "surname": "user", "user_level": "guest"}
+        json={"email": "testuser@example.com", "password": "G*qE/6r$", "username": "testuser", "name": "test", "surname": "user", "user_level": "guest"}
     )
     assert response.status_code == 403
 
