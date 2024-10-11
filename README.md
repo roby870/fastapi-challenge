@@ -17,6 +17,25 @@ The application is exposed on port 8000, and the PostgreSQL database on port 543
 
 Once you have cloned the repository, run `docker-compose build` in the root directory of the project and then `docker-compose up`. If you don’t want to see the output in the terminal and prefer to run in the background, you can execute `docker-compose up -d`.
 
+## Using Swagger
+
+Once the application is up and running, you can test the API using Swagger. Swagger provides a graphical interface to interact with the API more easily.
+Open your web browser and go to the following URL: http://localhost:8000/docs. On this page, you will find the automatically generated API documentation, and you will be able to test the available endpoints.
+
+## User Seeds
+
+The application includes predefined user seeds to facilitate manual testing. These users are automatically created when the database is initialized.
+
+#### Default Users
+
+Username: John
+Password: securepassword
+User level: admin
+
+Username: Jane
+Password: securepassword
+User level: user
+
 ## Tests
 
 You can run tests with `docker-compose run test`
