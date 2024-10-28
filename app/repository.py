@@ -1,10 +1,11 @@
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
-from app.models import User
-from . import schemas
 from typing import Optional
 import bcrypt
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+from app.models import User, Permission, UserPermission
+from . import schemas
+
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -22,12 +23,26 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def create_initial_data(db: Session):
     if db.query(User).count() == 0:
-        users = [
-            User(username="John", name="John", surname="Doe", email="john.doe@example.com", user_level="admin", password=get_password_hash("G*qE/6r$")),
-            User(username="Jane", name="Jane", surname="Doe", email="jane.doe@example.com", user_level="user", password=get_password_hash("G*qE/6r$")),
-        ]
-        db.bulk_save_objects(users)  
+        john = User(username="John", name="John", surname="Doe", email="john.doe@example.com", password=get_password_hash("G*qE/6r$"))
+        jane = User(username="Jane", name="Jane", surname="Doe", email="jane.doe@example.com", password=get_password_hash("G*qE/6r$"))
+        db.add(john)
+        db.add(jane)
         db.commit()
+        db.refresh(john)
+        db.refresh(jane)
+        permission_admin = Permission(name="admin")
+        permission_guest = Permission(name="guest")
+        permission_user = Permission(name="user")
+        db.add(permission_admin)  
+        db.add(permission_guest)
+        db.add(permission_user)
+        db.commit()
+        db.refresh(permission_admin)
+        db.refresh(permission_guest)
+        db.add(UserPermission(user_id=john.id, permission_id=permission_admin.id))
+        db.add(UserPermission(user_id=jane.id, permission_id=permission_guest.id))
+        db.commit() 
+
 
 def get_db():
     db = SessionLocal()
@@ -44,12 +59,15 @@ def create_user(db: Session, user: schemas.UserCreate):
         name=user.name,
         surname=user.surname,
         email=user.email,
-        user_level=user.user_level,
         password=hashed_password
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    new_user = get_user(db, username = user.username)
+    for permission_id in user.permissions:
+        db.add(UserPermission(user_id=new_user.id, permission_id=permission_id))
+    db.commit()
     return db_user
 
 def get_user(db: Session, username: str):
@@ -57,6 +75,12 @@ def get_user(db: Session, username: str):
 
 def get_user_by_email(db: Session, email: str):
     return db.query(User).filter(User.email == email).first()
+
+def check_is_admin(db: Session, user: schemas.UserCheckPermisions):
+    return db.query(UserPermission).filter(UserPermission.user_id == user.id, UserPermission.permission_id == 1).first()
+
+def check_is_admin_or_user(db: Session, user: schemas.UserCheckPermisions):
+    return db.query(UserPermission).filter(UserPermission.user_id == user.id, UserPermission.permission_id.in_([1, 3])).first()
 
 def filter_users(db: Session,
     name: Optional[str] = None,

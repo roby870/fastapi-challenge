@@ -9,14 +9,20 @@ from app import models
 @pytest.fixture(scope="function")
 def test_client():
     init_db()
-    db = TestingSessionLocal()  
+    db = TestingSessionLocal()
+    permission_admin = models.Permission(name="admin")
+    permission_guest = models.Permission(name="guest")
+    db.add(permission_admin)  
+    db.add(permission_guest)
+    db.commit()
+    db.refresh(permission_admin)
+    db.refresh(permission_guest)
     admin_user = models.User(
         email="admin@example.com",
         username="admin",
         name="John",
         surname="Doe",
         password=get_password_hash("G*qE/6r$"),  
-        user_level="admin"
     )
     db.add(admin_user)
     admin_user_2 = models.User(
@@ -25,7 +31,6 @@ def test_client():
         name="Jack",
         surname="Doe",
         password=get_password_hash("G*qE/6r$"),  
-        user_level="admin"
     )
     db.add(admin_user_2)
     guest_user_1 = models.User(
@@ -34,9 +39,15 @@ def test_client():
         name="Harry",
         surname="Doe",
         password=get_password_hash("G*qE/6r$"),  
-        user_level="guest"
     )
     db.add(guest_user_1)
+    db.commit()
+    db.refresh(admin_user)
+    db.refresh(admin_user_2)
+    db.refresh(guest_user_1)
+    db.add(models.UserPermission(user_id=admin_user.id, permission_id=permission_admin.id))
+    db.add(models.UserPermission(user_id=admin_user_2.id, permission_id=permission_admin.id))
+    db.add(models.UserPermission(user_id=guest_user_1.id, permission_id=permission_guest.id))
     db.commit()
     db.close()
     yield TestClient(app)
@@ -54,7 +65,7 @@ def test_create_user(test_client):
     response = test_client.post(
         "/create_user",
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"email": "testuser@example.com", "password": "G*qE/6r$", "username": "testuser", "name": "test", "surname": "user", "user_level": "guest"}
+        json={"email": "testuser@example.com", "password": "G*qE/6r$", "username": "testuser", "name": "test", "surname": "user", "permissions": [1]}
     )
     assert response.status_code == 200
     data = response.json()
@@ -65,7 +76,7 @@ def test_not_authenticated_create_user(test_client):
     response = test_client.post(
         "/create_user",
         headers={"Authorization": "Bearer 1234"},
-        json={"email": "testuser@example.com", "password": "G*qE/6r$", "username": "testuser", "name": "test", "surname": "user", "user_level": "guest"}
+        json={"email": "testuser@example.com", "password": "G*qE/6r$", "username": "testuser", "name": "test", "surname": "user", "permissions": [1]}
     )
     assert response.status_code == 401
 
@@ -79,7 +90,7 @@ def test_not_authorized_create_user(test_client):
     response = test_client.post(
         "/create_user",
         headers={"Authorization": f"Bearer {access_token}"},
-        json={"email": "testuser@example.com", "password": "G*qE/6r$", "username": "testuser", "name": "test", "surname": "user", "user_level": "guest"}
+        json={"email": "testuser@example.com", "password": "G*qE/6r$", "username": "testuser", "name": "test", "surname": "user", "permissions": [1]}
     )
     assert response.status_code == 403
 

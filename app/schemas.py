@@ -1,20 +1,15 @@
-from pydantic import BaseModel, EmailStr, field_validator
-from enum import Enum
-from typing import Optional
 import re
+from pydantic import BaseModel, EmailStr, field_validator, Field
+from typing import Optional, List
 
-class UserLevel(str, Enum):
-    admin = "admin"
-    user = "user"
-    guest = "guest"
 
 class UserCreate(BaseModel):
-    username: str
-    name: str
-    surname: str
-    email: str
-    user_level: UserLevel
-    password: str
+    username: str = Field(max_length=32)
+    name: str = Field(max_length=32)
+    surname: str = Field(max_length=32)
+    email: EmailStr 
+    permissions: List[int]
+    password: str = Field(max_length=32)
 
     @field_validator('password')
     def validate_password(cls, v):
@@ -36,16 +31,16 @@ class UserCreate(BaseModel):
 
 class UserRead(BaseModel):
     id: int
-    username: str
-    name: str
-    surname: str
+    username: str = Field(max_length=32)
+    name: str = Field(max_length=32)
+    surname: str = Field(max_length=32)
     email: EmailStr
-    user_level: UserLevel
 
     class Config:
         from_attributes = True
-        use_enum_values = True
 
+class UserCheckPermisions(BaseModel):
+    id: int
 
 class Token(BaseModel):
     access_token: str
@@ -53,3 +48,11 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+
+class Permission(BaseModel):
+    id: int
+    name: str  
+
+    class Config:
+        from_attributes = True

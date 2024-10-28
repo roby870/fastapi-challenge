@@ -1,14 +1,16 @@
+import logging
+import threading
+import time
+from typing import Optional
 from fastapi import FastAPI, Depends, Query
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from . import models, schemas, service
 from .database import engine
 from .repository import get_db
-from typing import Optional
 from .exceptions import CustomExceptions
-import logging
-import threading
-import time
+
 
 
 models.Base.metadata.create_all(bind=engine)
@@ -56,7 +58,10 @@ def increment_list_users_counter():
     list_users_counter += 1
 
 
-@app.post("/create_user", response_model=schemas.UserRead, dependencies=[Depends(increment_create_user_counter)])
+@app.post("/create_user", 
+          response_model=schemas.UserRead, 
+          dependencies=[Depends(increment_create_user_counter)],
+          tags=["users"])
 def create_user(user: schemas.UserCreate, token: str = Depends(oauth2_scheme),  db: Session = Depends(get_db)):
     """
     Create a new user in the system.
@@ -83,7 +88,7 @@ def create_user(user: schemas.UserCreate, token: str = Depends(oauth2_scheme),  
     current_user = service.get_current_user(db, token)
     if not current_user:
         raise CustomExceptions.get_credentials_exception()
-    if current_user.user_level != "admin":
+    if not service.check_is_admin(db, current_user):
         raise CustomExceptions.get_not_authorized_exception()
     db_user = service.get_user_by_email(db, email=user.email)
     if db_user:
@@ -94,7 +99,7 @@ def create_user(user: schemas.UserCreate, token: str = Depends(oauth2_scheme),  
     return service.create_user(db=db, user=user)
 
 
-@app.post("/token", response_model=schemas.Token)
+@app.post("/token", response_model=schemas.Token, tags=["users"])
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
     Authenticate a user and return an access token.
@@ -121,7 +126,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@app.get("/list_users/", response_model=list[schemas.UserRead], dependencies=[Depends(increment_list_users_counter)])
+@app.get("/list_users/", 
+         response_model=list[schemas.UserRead], 
+         dependencies=[Depends(increment_list_users_counter)],
+         tags=["users"])
 def list_users(
     skip: int = Query(0, ge=0),  
     limit: int = Query(10, ge=1),  
@@ -157,14 +165,14 @@ def list_users(
     current_user = service.get_current_user(db, token) 
     if not current_user:
         raise CustomExceptions.get_credentials_exception()
-    if current_user.user_level not in ["admin", "user"]:
+    if not service.check_is_admin_or_user(db, current_user):
         raise CustomExceptions.get_not_authorized_exception()
     query = service.filter_users(db, name, surname, email)
     users = query.offset(skip).limit(limit).all()
     return users
 
 
-@app.get("/counters/")
+@app.get("/counters/", response_model=dict, tags=["counters"])
 def get_counters(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     """
     Retrieve the counters for API call usage.
@@ -189,9 +197,9 @@ def get_counters(db: Session = Depends(get_db), token: str = Depends(oauth2_sche
     current_user = service.get_current_user(db, token)
     if not current_user:
         raise CustomExceptions.get_credentials_exception()
-    if current_user.user_level != "admin":
+    if not service.check_is_admin(db, current_user):
         raise CustomExceptions.get_not_authorized_exception()
-    return {
+    return JSONResponse(content={
         "create_user_calls": create_user_counter,
         "list_users_calls": list_users_counter
-    }
+    })

@@ -1,5 +1,28 @@
 # fastapi-challenge
 
+## Overview
+
+Implement an API in FastAPI that:
+
+Communicates with a database containing a users table with a basic structure as shown below:
+
+A) | name | surname | email | user_level | password |
+
+B) The possible values for user_level are: admin, user, guest
+
+Adds user authentication using JWT. Create a login endpoint.
+
+Creates a create_user endpoint to allow user creation. Only users with user_level=admin can create users.
+
+Creates a list_users endpoint that includes search filters for the users table and returns a list of users that meet the search criteria, with pagination handled on the backend. Only users with user_level=admin or user can access this list.
+
+Receives a GET request that retrieves the value of a counter for the number of times the create_user and list_users endpoints were called.
+
+Every 5 minutes, increments a second counter and prints its value to a log or console.
+
+Adds necessary logging.
+
+
 ## Requirements
 
 - [Docker](https://www.docker.com/) (recommended version: 20.10 or higher).
@@ -15,7 +38,7 @@ The application is exposed on port 8000, and the PostgreSQL database on port 543
 
 ## How to run the application
 
-Once you have cloned the repository, run `docker-compose build` in the root directory of the project and then `docker-compose up`. If you don’t want to see the output in the terminal and prefer to run in the background, you can execute `docker-compose up -d`.
+Once you have cloned the repository, run `docker-compose build` in the root directory of the project and then `docker-compose up app`. If you don’t want to see the output in the terminal and prefer to run in the background, you can execute `docker-compose up -d app`.
 
 ## Using Swagger
 

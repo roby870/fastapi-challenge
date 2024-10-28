@@ -37,7 +37,6 @@ services:
       - ./app:/app/app
     depends_on:
       - db
-      - db_test 
     env_file:
       - .env
 

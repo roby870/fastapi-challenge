@@ -1,11 +1,11 @@
 import os
+from datetime import datetime, timedelta
+from typing import Optional
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
-from typing import Optional
-from . import models, schemas, repository
+from . import schemas, repository
 
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -17,9 +17,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def create_user(db: Session, user: schemas.UserCreate):
     return repository.create_user(db=db, user=user)
-
-def get_user_by_id(db: Session, user_id: int):
-    return db.query(models.User).filter(models.User.id == user_id).first()
 
 def get_user(db: Session, username: str):
     return repository.get_user(db, username)
@@ -55,6 +52,12 @@ def get_current_user(db: Session, token: str = Depends(oauth2_scheme)):
     if user is None:
         return False
     return schemas.UserRead.model_validate(user)
+
+def check_is_admin(db: Session, user: schemas.UserCheckPermisions):
+    return repository.check_is_admin(db, user)
+
+def check_is_admin_or_user(db: Session, user: schemas.UserCheckPermisions):
+    return repository.check_is_admin_or_user(db, user)
 
 def filter_users(db: Session,
         name: Optional[str] = None,
